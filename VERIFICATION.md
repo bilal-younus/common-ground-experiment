@@ -22,3 +22,9 @@ Participant-guide revision:
 - Added six editable round-two discussion shortcuts and round-one totals available during the second ballot. Candidate choices remain the three participants.
 - Added seven regression cases covering AI assignment to each label and agent voting for humans/self across all rounds. All 22 rule tests passed; React production build passed.
 - Seat types were already shuffled. Agent votes favour capped current-round message counts; self-votes are possible in main rounds but prohibited in the tie-break. Neither behaviour was silently changed.
+
+Third-round verification and question alignment:
+- Added five real PostgreSQL/WebSocket integration scenarios that reach round three through submitted ballots: tie-ballot winner, round-two support fallback, participation fallback, exact draw, and silent tie ballot timeout.
+- Each checks shared results, reconnect, persisted results/history, and third-round entry. Non-silent cases deliberately submit prohibited self-votes and verify rejection before casting valid ballots.
+- Full local suite: 30 passed in 63.47 seconds; one dependency deprecation warning. React build passed.
+- Moved the question into the sidebar beside the participant workspace; detailed rules remain below and aligned with the workspace. Browser layout inspected.
