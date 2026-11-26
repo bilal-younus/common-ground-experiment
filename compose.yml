@@ -1,0 +1,33 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://experiment:experiment@db:5432/experiment
+      CONFIG_PATH: /app/config.yml
+    volumes:
+      - ./config.yml:/app/config.yml:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: experiment
+      POSTGRES_USER: experiment
+      POSTGRES_PASSWORD: experiment
+    volumes:
+      - experiment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U experiment -d experiment"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+volumes:
+  experiment_data:

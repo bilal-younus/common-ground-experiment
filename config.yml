@@ -1,0 +1,13 @@
+# Researcher-only file. New rooms read this setup; existing rooms keep their snapshot.
+participants: [human, human, ai]
+discussion_seconds: 60
+voting_seconds: 30
+feedback_seconds: 8
+waiting_seconds: 300
+tie_discussion_seconds: 30
+tie_voting_seconds: 30
+question: What would make someone a good Decision Maker, and who in your group best fits those qualities?
+ai_mode: simulated
+# At most two contributions per agent per discussion; no repeated monologue.
+agent_min_delay_seconds: 12
+agent_max_delay_seconds: 24

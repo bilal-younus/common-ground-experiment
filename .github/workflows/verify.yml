@@ -1,0 +1,30 @@
+name: Verify clean Docker setup
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start from scratch
+        run: docker compose up --build -d --wait --wait-timeout 180
+      - name: Check page and database health
+        run: |
+          curl --fail http://localhost:8000/api/health
+          curl --fail http://localhost:8000/ | grep 'Common Ground'
+      - name: Create disposable integration database
+        run: docker compose exec -T db createdb -U experiment chm_test_ci
+      - name: Run rule and real database WebSocket tests inside the app container
+        run: >-
+          docker compose exec -T
+          -e PYTHONPATH=/app/backend
+          -e TEST_DATABASE_URL=postgresql+psycopg://experiment:experiment@db:5432/chm_test_ci
+          app pytest -p no:cacheprovider backend/tests -q
+      - name: Save diagnostic output
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Stop the test stack
+        if: always()
+        run: docker compose down -v
