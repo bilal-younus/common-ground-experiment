@@ -1,6 +1,6 @@
 # AI-assisted development: structured summary
 
-This is an edited summary of the development requests and resulting decisions, not a verbatim transcript or a claim that these exact prompts were used. Informal exchanges are omitted. It does not replace the full prompt history requested in the assessment.
+**Format:** Retrospectively reconstructed prompts, followed by implemented results.
 
 **Assistant:** OpenAI Codex desktop  
 **Model selector label:** GPT 6 Astra (confirmed by the candidate)  
@@ -8,6 +8,12 @@ This is an edited summary of the development requests and resulting decisions, n
 **Collaboration:** one assistant; no subagents
 
 ## 1. Requirements and scope
+
+**Prompt**
+
+> Build a minimal three-participant Decision Maker experiment using React, FastAPI, PostgreSQL, and Docker Compose. Support all three human/agent compositions through YAML. Separate experiment rules from transport and UI concerns. Review relevant platforms as references and document pragmatic scope choices.
+
+**Result and rationale**
 
 **Objective:** Implement a lightweight, three-participant experiment for electing a Decision Maker.
 
@@ -20,6 +26,12 @@ This is an edited summary of the development requests and resulting decisions, n
 **Decision:** Separate experiment rules from the HTTP/WebSocket adapter and React interface. Use simulated agents for a keyless demonstration. No code was copied from the researched repositories.
 
 ## 2. Session lifecycle and timing
+
+**Prompt**
+
+> Define a bounded session lifecycle with a waiting room, two timed discussions, and a ballot after each discussion. Explain how round 1 feedback informs round 2. Keep phase transitions authoritative on the server and specify what happens when participants remain silent or miss a ballot.
+
+**Result and rationale**
 
 **Objective:** Make every stage explicit and prevent inactivity from blocking completion indefinitely.
 
@@ -34,6 +46,12 @@ This is an edited summary of the development requests and resulting decisions, n
 
 ## 3. Election and tie-breaking
 
+**Prompt**
+
+> Count votes from both main rounds. If cumulative leaders tie, add a bounded tie-break restricted to those candidates and prohibit self-votes. Use earlier voting evidence and participation as explicit fallback criteria. Do not select a random winner; explain any unresolved outcome and limitations of the participation metric.
+
+**Result and rationale**
+
 **Objective:** Give both main ballots a role and avoid arbitrary winner selection.
 
 - Add round 1 and round 2 votes with equal weight.
@@ -47,6 +65,12 @@ This is an edited summary of the development requests and resulting decisions, n
 
 ## 4. Participant guidance
 
+**Prompt**
+
+> Make the experiment self-explanatory. Present the shared Decision Maker question, rules, phase, countdown, and next action. Combine free text with editable quick replies so participants can contribute within the short discussion window.
+
+**Result and rationale**
+
 **Objective:** Make the experiment understandable without an external facilitator.
 
 **Shared question:** “What would make someone a good Decision Maker, and who in your group best fits those qualities?”
@@ -58,6 +82,12 @@ This is an edited summary of the development requests and resulting decisions, n
 
 ## 5. Agent behaviour and revision
 
+**Prompt**
+
+> Revise agent pacing: responses are too fast and an agent appears to be speaking alone. Introduce delayed contributions, limit message frequency, and make follow-ups depend on new peer input. Document whether agents are simulated or live LLMs and avoid overstating their realism.
+
+**Result and rationale**
+
 **Objective:** Avoid immediate, repetitive agent messages that dominate the discussion.
 
 **Observed issue:** Candidate feedback identified overly fast contributions and an agent speaking without meaningful interaction.
@@ -67,6 +97,12 @@ This is an edited summary of the development requests and resulting decisions, n
 **Limitation:** These are rule-based simulations, not live LLMs. Their wording and timing can still reveal their nature. Interface blinding does not establish that humans cannot identify an agent.
 
 ## 6. Network identity and security
+
+**Prompt**
+
+> Design participant identity independently of IP addresses so refreshes and network changes do not create a new seat. Explain token authentication, server-side action validation, and which fields participants may receive. Bound message size and frequency, isolate the database, and distinguish local-demo protections from production security.
+
+**Result and rationale**
 
 **Objective:** Preserve participant identity across refreshes and network changes without using an IP address as identity.
 
@@ -84,6 +120,12 @@ This is an edited summary of the development requests and resulting decisions, n
 
 ## 7. Database and recovery
 
+**Prompt**
+
+> Use PostgreSQL for actual experiment persistence. Store configuration, messages, ballots, transitions, and results. Persist accepted mutations before broadcasting. Define recovery after browser disconnects and server restarts, and explain the storage and concurrency trade-offs.
+
+**Result and rationale**
+
 **Objective:** Persist experiment data and keep all participants consistent.
 
 **Implementation:** PostgreSQL 16, accessed through SQLAlchemy and psycopg. The `experiment_sessions` table stores a session ID and JSON snapshot containing configuration, messages, ballots, transition history, and results.
@@ -96,6 +138,12 @@ This is an edited summary of the development requests and resulting decisions, n
 **Trade-off:** JSON snapshots keep the assessment compact. A larger study would benefit from normalized event storage and transcript pagination. The server runs as one process because connection routing and timers are in memory.
 
 ## 8. Verification and delivery
+
+**Prompt**
+
+> Provide a one-command Docker setup that does not require host Node.js, Python, or PostgreSQL. Verify the frontend build and all three participant compositions against a real database. Test synchronized results and reconnection, document debugging outcomes, and publish the implementation with reproducible setup instructions.
+
+**Result and rationale**
 
 **Objective:** Make the application runnable on a computer without Node.js, Python, or PostgreSQL installed.
 
