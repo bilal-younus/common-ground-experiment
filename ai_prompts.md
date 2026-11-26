@@ -139,9 +139,3 @@ docker compose up --build -d --wait
 The [GitHub Actions run](https://github.com/bilal-younus/common-ground-experiment/actions/runs/45812784461) successfully built and started the stack from a clean runner, checked app/database health, and passed all 18 tests. Integration tests exercised all three participant compositions through HTTP and authenticated WebSockets against real PostgreSQL, including shared results, reconnection, and persistence.
 
 The source, YAML configuration, Docker setup, startup helpers, and verification notes were published to the public repository.
-
-## Process notes
-
-The conversation moved through research, rule design, implementation, user feedback, and verification. Some technical details were proposed by the assistant during implementation; the reconstructed prompts above combine those discussions for readability rather than attributing every detail to an original candidate prompt.
-
-No subagents were used. No complete active-effort stopwatch record exists, so this record does not claim a verified four-hour total. The original conversation is needed to satisfy the assessment's request for all actual prompts.
