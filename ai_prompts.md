@@ -191,3 +191,11 @@ make sure to setup in one command make sure to start from scartch if people done
 Assistant clarification: The assessment requires the exact AI model name. What model label is shown in this chat’s model selector? I can identify Codex as the tool, but the chat export does not include that exact label.
 
 User response: GPT 6 Astra
+
+## Publication continuation
+
+continue and use less token
+
+do it now
+
+Publication note: private recruitment correspondence was removed from this public log after automated review identified it. The implementation and technical prompts are retained.
