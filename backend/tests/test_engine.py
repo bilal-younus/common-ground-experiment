@@ -152,3 +152,34 @@ def test_agents_wait_and_do_not_monologue():
     agent_step(r,156)
     assert len(r['messages'])==3
     assert 'ask each person for a reason' in r['messages'][-1]['text']
+
+
+def test_ai_seat_can_be_any_label(monkeypatch):
+    for ai_seat in range(3):
+        kinds=['human']*3
+        kinds[ai_seat]='ai'
+        monkeypatch.setattr(secrets.SystemRandom, 'shuffle', lambda self, values: values.__setitem__(slice(None), kinds))
+        r=room(['human','human','ai'])
+        assert r['players'][ai_seat]['kind']=='ai'
+        tokens=[join(r),join(r)]
+        assert {identify(r,t) for t in tokens}==set(range(3))-{ai_seat}
+        assert all('kind' not in p for p in view(r,identify(r,tokens[0]))['players'])
+
+
+@pytest.mark.parametrize('round_number',[1,2,3])
+@pytest.mark.parametrize('most_active',['human','ai'])
+def test_agent_vote_uses_discussion_and_respects_self_vote_rule(round_number,most_active):
+    r=room(['human','human','ai']);start(r)
+    bot=next(p['id'] for p in r['players'] if p['kind']=='ai')
+    human=next(p['id'] for p in r['players'] if p['kind']=='human')
+    contributor=bot if most_active=='ai' else human
+    r['round']=round_number
+    r['messages']=[dict(id=1,player=contributor,round=round_number,text='A considered contribution about listening.',at=150)]
+    transition(r,'voting',30,200)
+    agent_step(r,210)
+    choice=r['votes'][str(round_number)][str(bot)]
+    if round_number==3:
+        assert choice!=bot
+        if most_active=='human':assert choice==human
+    else:
+        assert choice==contributor

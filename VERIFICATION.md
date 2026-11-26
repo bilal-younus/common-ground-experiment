@@ -16,3 +16,9 @@ Final verification after pacing changes:
 - 18 tests passed against PostgreSQL (15 rule tests + 3 complete condition flows), in 26.27 seconds. One dependency deprecation warning from Starlette/AnyIO; no failing checks.
 - React production rebuild passed after changing chat autoscroll to scroll only the transcript pane.
 - Browser quick-reply test: selected Fairness, verified editable composer text, submitted it, observed identical delivery in the other tab. The agent subsequently referenced that message after a delay, then stayed silent without additional peer input.
+
+Participant-guide revision:
+- Moved question and rules below the main workspace; replaced the long opening rules with a three-step guide and expandable details. Checked the waiting-room layout in the browser.
+- Added six editable round-two discussion shortcuts and round-one totals available during the second ballot. Candidate choices remain the three participants.
+- Added seven regression cases covering AI assignment to each label and agent voting for humans/self across all rounds. All 22 rule tests passed; React production build passed.
+- Seat types were already shuffled. Agent votes favour capped current-round message counts; self-votes are possible in main rounds but prohibited in the tie-break. Neither behaviour was silently changed.
