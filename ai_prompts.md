@@ -1,160 +1,147 @@
-# AI-assisted development: structured summary
+# How we used AI to build Common Ground
 
-**Format:** Retrospectively reconstructed prompts, followed by implemented results.
+**Tool:** OpenAI Codex desktop  
+**Model:** GPT 6 Astra  
+**Format:** Prompts below are edited reconstructions of the conversation, paired with the decisions and work that followed.
 
-**Assistant:** OpenAI Codex desktop  
-**Model selector label:** GPT 6 Astra (confirmed by the candidate)  
-**Tools:** shell execution, file editing, web research, browser inspection, and GitHub integration  
-**Collaboration:** one assistant; no subagents
-
-## 1. Requirements and scope
+## 1. Understand the problem before writing code
 
 **Prompt**
 
-> Build a minimal three-participant Decision Maker experiment using React, FastAPI, PostgreSQL, and Docker Compose. Support all three human/agent compositions through YAML. Separate experiment rules from transport and UI concerns. Review relevant platforms as references and document pragmatic scope choices.
+> First, explain the complete problem to me. What are they expecting us to build, what are the required technologies, and which decisions have they left to us? Let's break it down before starting the implementation.
 
-**Result and rationale**
+**What followed**
 
-**Objective:** Implement a lightweight, three-participant experiment for electing a Decision Maker.
+We identified the required three-person experiment, waiting room, two discussion rounds, voting, hidden participant types, and three YAML-configured conditions. React, FastAPI, a real database, and a one-command Docker setup were requirements. Tie-breaking, intermediate feedback, and agent behaviour needed our own decisions.
 
-- Use React, Python/FastAPI, PostgreSQL, and Docker Compose.
-- Configure the three conditions through YAML: three humans, two humans and one agent, or one human and two agents.
-- Use neutral participant labels and keep participant types out of the client-facing state.
-- Prioritize a working experiment, understandable rules, and a reproducible local setup.
-- Examine related experiment platforms as references; implement the assessment independently.
+The early discussion focused on understanding those choices. It was not just a request to generate an application from the brief.
 
-**Decision:** Separate experiment rules from the HTTP/WebSocket adapter and React interface. Use simulated agents for a keyless demonstration. No code was copied from the researched repositories.
-
-## 2. Session lifecycle and timing
+## 2. Research related projects and try existing demos
 
 **Prompt**
 
-> Define a bounded session lifecycle with a waiting room, two timed discussions, and a ballot after each discussion. Explain how round 1 feedback informs round 2. Keep phase transitions authoritative on the server and specify what happens when participants remain silent or miss a ballot.
+> Let's go through the internet and find relevant projects, GitHub repositories, or existing platforms for this kind of human–AI experiment. Are any of them deployed so we can try the flow ourselves? Explain which examples are closest to our task and what we can learn from them.
 
-**Result and rationale**
+**What followed**
 
-**Objective:** Make every stage explicit and prevent inactivity from blocking completion indefinitely.
+The research brought related platforms and examples into the discussion:
 
-1. Wait for all required human seats to be filled and ready.
-2. Run round 1: 60-second discussion, then a ballot lasting up to 30 seconds.
-3. Display aggregate round 1 feedback for 8 seconds.
-4. Run round 2: 60-second discussion, then a ballot lasting up to 30 seconds.
-5. Combine the two rounds' votes and determine whether a tie-break is needed.
-6. Display a shared result with the reason for the outcome.
+- [oTree readymade demos](https://demo.on.otree.org/), including AI chat and group coordination examples.
+- [GRAIL / Group AI Lab](https://github.com/microsoft/group_ai_lab).
+- [CHM Simple Chat](https://github.com/center-for-humans-and-machines/simple-chat).
 
-**Decision:** The server owns deadlines and phase transitions. Missing votes count as abstentions; silence does not extend a phase. Waiting expires after 300 seconds. Both main rounds use the same configured discussion and voting durations.
+The candidate explored the oTree demo list and asked which example to select. The follow-up observation was that the visible interaction seemed simple: a chat box and choices for reaching a group decision. That prompted a closer look at what our assessment actually needed beyond a chat interface.
 
-## 3. Election and tie-breaking
+These were design references. The implementation was written for this assessment; no code was copied from those repositories. This record does not claim that every referenced project had a working deployed demo or that every demo was tested.
 
-**Prompt**
-
-> Count votes from both main rounds. If cumulative leaders tie, add a bounded tie-break restricted to those candidates and prohibit self-votes. Use earlier voting evidence and participation as explicit fallback criteria. Do not select a random winner; explain any unresolved outcome and limitations of the participation metric.
-
-**Result and rationale**
-
-**Objective:** Give both main ballots a role and avoid arbitrary winner selection.
-
-- Add round 1 and round 2 votes with equal weight.
-- Allow self-votes in the two main ballots.
-- If cumulative leaders tie, hold a 30-second discussion and a ballot lasting up to 30 seconds.
-- Restrict tie-ballot candidates to the tied leaders; all three participants may vote, but self-votes are prohibited.
-- Resolve a remaining tie using round 2 support, then round 1 support, then capped participation counts.
-- If the evidence remains equal, return an inconclusive result rather than selecting randomly.
-
-**Trade-off:** The conditional third discussion extends the brief's two-round flow. Participation is an observable activity proxy, not a validated measure of leadership. These choices are disclosed to participants and documented in the README.
-
-## 4. Participant guidance
+## 3. Spend time on the rules and awkward cases
 
 **Prompt**
 
-> Make the experiment self-explanatory. Present the shared Decision Maker question, rules, phase, countdown, and next action. Combine free text with editable quick replies so participants can contribute within the short discussion window.
+> Before we build, let's think through the rules properly. Who decides whether a session has two humans and one AI? What happens if people join but nobody chats or votes? Why do we have a first round if its votes do not affect the result? What happens if everyone votes for themselves? We also need to think about changing IP addresses and responses that make an AI too easy to recognise.
 
-**Result and rationale**
+**What followed**
 
-**Objective:** Make the experiment understandable without an external facilitator.
+This discussion shaped the experiment:
 
-**Shared question:** “What would make someone a good Decision Maker, and who in your group best fits those qualities?”
+- The researcher chooses the participant composition in YAML; participants do not choose or see their condition in the interface.
+- Waiting, discussion, and voting have deadlines. Silence or missing votes cannot keep a session running indefinitely.
+- Both main rounds contribute to the final vote total.
+- Participant identity is tied to a private session token, not an IP address.
+- Agent timing and repeated messages need attention as well as the text of each response.
 
-- Explain the election rules before participants confirm readiness.
-- Show the current round, stage, remaining time, and required action.
-- Support free-text discussion and editable quick-reply suggestions.
-- Explain cumulative totals and the final selection criteria.
+We returned to the assessment brief during this stage to distinguish required behaviour from optional design choices.
 
-## 5. Agent behaviour and revision
-
-**Prompt**
-
-> Revise agent pacing: responses are too fast and an agent appears to be speaking alone. Introduce delayed contributions, limit message frequency, and make follow-ups depend on new peer input. Document whether agents are simulated or live LLMs and avoid overstating their realism.
-
-**Result and rationale**
-
-**Objective:** Avoid immediate, repetitive agent messages that dominate the discussion.
-
-**Observed issue:** Candidate feedback identified overly fast contributions and an agent speaking without meaningful interaction.
-
-**Revision:** Schedule contributions with a 12–24 second delay, limit each agent to two contributions per discussion, and require new peer input before a follow-up. Responses use simple keyword matching to reference public discussion. Election winners are never randomized.
-
-**Limitation:** These are rule-based simulations, not live LLMs. Their wording and timing can still reveal their nature. Interface blinding does not establish that humans cannot identify an agent.
-
-## 6. Network identity and security
+## 4. Work through the tie-break instead of choosing randomly
 
 **Prompt**
 
-> Design participant identity independently of IP addresses so refreshes and network changes do not create a new seat. Explain token authentication, server-side action validation, and which fields participants may receive. Bound message size and frequency, isolate the database, and distinguish local-demo protections from production security.
+> I think both rounds should count. If there is a tie, let the tied candidates go into an extra discussion and vote, with self-voting banned. If it ties again, look at the earlier votes and then participation. But what happens if all that evidence is still equal? Let's make the rule clear before implementing it.
 
-**Result and rationale**
+**What followed**
 
-**Objective:** Preserve participant identity across refreshes and network changes without using an IP address as identity.
+We settled on adding the two main ballots equally. A unique cumulative leader wins. A tie triggers one bounded extra discussion and a ballot between the tied leaders. All participants may vote, but nobody may vote for themselves in that ballot.
 
-**Implemented decisions:**
+A remaining tie is narrowed using round 2 support, then round 1 support, then capped participation counts. If the evidence still does not distinguish a winner, the result is inconclusive. There is no random winner selection.
 
-- Identify each seat with a private, randomly generated 256-bit token; store only its SHA-256 hash in PostgreSQL.
-- Keep the token in browser session storage and send it in the first WebSocket frame rather than in the URL.
-- Derive the sender's identity on the server; validate the phase, round, vote eligibility, and deadline before accepting actions.
-- Build participant snapshots from an explicit allowlist. Exclude participant types, token hashes, private ballots, and raw configuration.
-- Limit chat messages to 500 characters and enforce a two-second per-seat message interval. Render messages as text.
-- Bind the app's published port to localhost. Keep PostgreSQL on the internal Compose network without a published database port.
-- Do not store IP addresses in experiment records. Local server access logs may still contain connecting IPs.
+Two limitations matter: the extra discussion extends the brief's two-round flow, and speaking more is not proof of better leadership. Participation is only a disclosed activity proxy. The README explains the exact criteria.
 
-**Boundaries:** A token represents a seat, not a verified person. This implementation does not enforce one person per seat. Browser reconnect was tested; changing networks/IP addresses was not tested directly. Internet deployment would require additional transport security, abuse controls, and operational review.
-
-## 7. Database and recovery
+## 5. Make the experience understandable and useful
 
 **Prompt**
 
-> Use PostgreSQL for actual experiment persistence. Store configuration, messages, ballots, transitions, and results. Persist accepted mutations before broadcasting. Define recovery after browser disconnects and server restarts, and explain the storage and concurrency trade-offs.
+> How can we make this more thoughtful than a basic chat and vote page? The experiment should explain itself. Let's start with: “What would make someone a good Decision Maker, and who in your group best fits those qualities?” Time is short, so allow normal messages and quick choices that people can edit before sending.
 
-**Result and rationale**
+**What followed**
 
-**Objective:** Persist experiment data and keep all participants consistent.
+The interface explains the rules before readiness, shows the current round and countdown, and provides editable quick replies alongside free text. Round 1 aggregate feedback gives participants something to consider before round 2. The result explains how the Decision Maker was selected.
 
-**Implementation:** PostgreSQL 16, accessed through SQLAlchemy and psycopg. The `experiment_sessions` table stores a session ID and JSON snapshot containing configuration, messages, ballots, transition history, and results.
+The emphasis became a clear experiment flow and explainable decisions, rather than adding unrelated features.
 
-- Commit state changes before broadcasting them to participants.
-- Use a Docker volume so records survive container recreation.
-- Restore a participant's seat and current state after browser reconnection.
-- Mark unfinished sessions as interrupted after a server restart while retaining their records.
-
-**Trade-off:** JSON snapshots keep the assessment compact. A larger study would benefit from normalized event storage and transcript pagination. The server runs as one process because connection routing and timers are in memory.
-
-## 8. Verification and delivery
+## 6. Agree on the design, then build the core flow
 
 **Prompt**
 
-> Provide a one-command Docker setup that does not require host Node.js, Python, or PostgreSQL. Verify the frontend build and all three participant compositions against a real database. Test synchronized results and reconnection, document debugging outcomes, and publish the implementation with reproducible setup instructions.
+> Now let's implement what we discussed. Keep the required stack and make sure all three participant configurations work. Choose an agent approach that is suitable and quick to run. Keep the rules, question, tie-break, and reconnect behaviour consistent with the design.
 
-**Result and rationale**
+**What followed**
 
-**Objective:** Make the application runnable on a computer without Node.js, Python, or PostgreSQL installed.
+The assistant implemented React for the participant interface, FastAPI for HTTP and WebSockets, and PostgreSQL 16 for persistence. Experiment rules live separately from the transport layer. The server controls deadlines and validates actions.
 
-**Delivery:** Docker Desktop or Docker Engine with Compose is the prerequisite. Start the full stack with:
+We chose rule-based simulated agents so the application runs without an API key. This was a pragmatic implementation choice, not a claim that simulated agents provide the same behaviour as live LLMs.
+
+PostgreSQL stores a session ID and JSON snapshot containing configuration, messages, ballots, transition history, and results. Changes are committed before they are broadcast. A Docker volume retains the records. One server process keeps in-memory connection routing and timers simple.
+
+## 7. Handle reconnects and keep private state private
+
+**Prompt**
+
+> Make sure a refresh or network change does not give someone a different identity. Participants should not be able to see who is an AI or submit actions as another player. Explain how identity and private information are handled, and keep the local setup simple.
+
+**What followed**
+
+The implementation uses a private 256-bit seat token stored in browser session storage. PostgreSQL stores its SHA-256 hash. The token is sent in the first WebSocket frame rather than the URL, and the server derives the sender's identity from it.
+
+The server checks the round, phase, deadline, and eligible vote targets. Participant snapshots exclude type flags, token hashes, raw configuration, and private ballots. Messages have a 500-character limit and a two-second per-seat interval, and React renders them as text.
+
+The app is bound to localhost, and PostgreSQL has no published host port. IP addresses are not stored in experiment records, although local server access logs may contain them.
+
+These are local-demo protections. A token identifies a seat, not a verified person. Browser reconnect was tested; changing networks was not directly tested. Public internet deployment would need further security work. A server restart marks unfinished sessions interrupted while preserving their records.
+
+## 8. Test the interaction and respond to feedback
+
+**Prompt**
+
+> One player is writing too quickly and seems to be talking alone. That makes it feel obviously like an AI. Slow the responses down and make them react to the conversation rather than keep posting by themselves.
+
+**What followed**
+
+Candidate feedback led to delayed agent contributions, with a sampled 12–24 second interval and at most two messages per discussion. Follow-ups require new peer input and wait at least the minimum response delay. Simple keyword matching lets a response refer to the discussion.
+
+The agents remain simulations; pacing changes do not guarantee that participants cannot identify them.
+
+Browser testing also exposed an invalid React effect cleanup caused by returning the result of `scrollIntoView`. The effect was corrected, the frontend rebuilt, and the resumed session and results checked again. Editable quick replies and delivery between participant tabs were also checked.
+
+## 9. Make it easy to run and verify the full stack
+
+**Prompt**
+
+> Make sure we fulfil the technology requirements and that someone can start the project from scratch without installing Node packages themselves. Explain the setup clearly, test it, and push it to GitHub.
+
+**What followed**
+
+Docker builds the frontend, installs Python dependencies, and starts PostgreSQL. The host needs Docker with Compose, but does not need Node.js, Python, or PostgreSQL installed separately:
 
 ```sh
 docker compose up --build -d --wait
 ```
 
-**Evidence:** The clean Docker build, HTTP/database health checks, and all 18 tests passed in [GitHub Actions](https://github.com/bilal-younus/common-ground-experiment/actions/runs/45812784461). Integration tests exercised all three participant compositions against PostgreSQL using HTTP and authenticated WebSockets.
+The [GitHub Actions run](https://github.com/bilal-younus/common-ground-experiment/actions/runs/45812784461) successfully built and started the stack from a clean runner, checked app/database health, and passed all 18 tests. Integration tests exercised all three participant compositions through HTTP and authenticated WebSockets against real PostgreSQL, including shared results, reconnection, and persistence.
 
-**Debugging example:** Browser testing exposed an invalid React effect cleanup caused by returning `scrollIntoView`'s result. The effect was corrected, the frontend rebuilt, and reconnect/results checked again.
+The source, YAML configuration, Docker setup, startup helpers, and verification notes were published to the public repository.
 
-**Effort disclosure:** No complete active-effort stopwatch record exists. This summary does not claim a verified four-hour total.
+## Process notes
+
+The conversation moved through research, rule design, implementation, user feedback, and verification. Some technical details were proposed by the assistant during implementation; the reconstructed prompts above combine those discussions for readability rather than attributing every detail to an original candidate prompt.
+
+No subagents were used. No complete active-effort stopwatch record exists, so this record does not claim a verified four-hour total. The original conversation is needed to satisfy the assessment's request for all actual prompts.
