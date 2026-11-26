@@ -53,10 +53,13 @@ participants: [human, human, human] # 3 humans
 
 Configuration is validated when a new room is created. Each session stores its own snapshot, so editing YAML does not alter an ongoing experiment. Seat labels are shuffled independently of participant type. Election outcomes never use random selection.
 
+The experiment always has **two main rounds**; there is no separate round-count setting. The following table includes all configurable YAML keys.
+
 | Setting | Default | Meaning |
 |---|---:|---|
-| discussion_seconds | 60 | Each main discussion |
-| voting_seconds | 30 | Each main ballot, ending early if all vote |
+| participants | `[human, human, ai]` | Session composition; exactly three seats |
+| discussion_seconds | 60 | Discussion in round 1 AND round 2 (60 seconds each) |
+| voting_seconds | 30 | Ballot in round 1 AND round 2 (up to 30 seconds each) |
 | feedback_seconds | 8 | First-round aggregate feedback |
 | waiting_seconds | 300 | Maximum time to assemble/ready the group |
 | tie_discussion_seconds | 30 | Conditional tie discussion |
@@ -65,6 +68,8 @@ Configuration is validated when a new room is created. Each session stores its o
 | agent_max_delay_seconds | 24 | Maximum sampled scheduling delay |
 | question | See YAML | Shared discussion question |
 | ai_mode | simulated | Only mode implemented in this build |
+
+**Default flow:** Waiting room → round 1 discussion (60s) → round 1 vote (up to 30s) → feedback (8s) → round 2 discussion (60s) → round 2 vote (up to 30s) → results, or conditional tie discussion (30s) and tie vote (up to 30s) → results.
 
 Maximum active duration under defaults: 248 seconds including first-round feedback and the conditional tie-break, excluding the waiting room. Missing participation never extends a deadline.
 
@@ -137,7 +142,7 @@ For development, set `DATABASE_URL`, run `.venv/bin/uvicorn main:app --app-dir b
 
 ## AI process and verification
 
-See `ai_prompts.md` for the assessment conversation prompts and confirmed model label (GPT 6 Astra, using Codex desktop). See `VERIFICATION.md` for actual test evidence and remaining checks. Earlier planning happened across multiple days; no complete active-effort stopwatch record exists, so this project does **not claim a verified four-hour total**. Confirm actual effort before submission.
+See `ai_prompts.md` for the edited development summary and confirmed model label (GPT 6 Astra, using Codex desktop). It is not a verbatim prompt log; the assessment’s full-history requirement remains outstanding with this edited version. See `VERIFICATION.md` for actual test evidence and remaining checks. Earlier planning happened across multiple days; no complete active-effort stopwatch record exists, so this project does **not claim a verified four-hour total**. Confirm actual effort before submission.
 
 No repository was copied. Design references: [FastAPI WebSockets](https://fastapi.tiangolo.com/advanced/websockets/), [Docker Compose readiness](https://docs.docker.com/compose/how-tos/startup-order/), [GRAIL](https://github.com/microsoft/group_ai_lab) and [CHM Simple Chat](https://github.com/center-for-humans-and-machines/simple-chat). References informed discussion; this source was authored for the assessment.
 
